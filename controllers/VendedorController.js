@@ -29,8 +29,11 @@ async function addVendedor(req, res) {
 
 async function updateVendedor(req, res) {
   try {
-    const atualizado = await VendedorUseCases.updateVendedorDB(req.body);
-    res.status(200).json(atualizado);
+    const vendedorAtualizado = await VendedorUseCases.updateVendedorDB({
+      ...req.body,
+      vendedor_id: req.params.id
+    });
+    res.status(200).json(vendedorAtualizado);
   } catch (error) {
     res.status(404).json({ erro: error.message });
   }

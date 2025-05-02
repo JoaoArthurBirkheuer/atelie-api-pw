@@ -29,8 +29,11 @@ async function addPeca(req, res) {
 
 async function updatePeca(req, res) {
   try {
-    const atualizada = await PecaUseCases.updatePecaDB(req.body);
-    res.status(200).json(atualizada);
+    const pecaAtualizada = await PecaUseCases.updatePecaDB({
+      ...req.body,
+      peca_id: req.params.id 
+    });
+    res.status(200).json(pecaAtualizada);
   } catch (error) {
     res.status(404).json({ erro: error.message });
   }

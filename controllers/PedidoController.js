@@ -29,8 +29,11 @@ async function addPedido(req, res) {
 
 async function updatePedido(req, res) {
   try {
-    const atualizado = await PedidoUseCases.updatePedidoDB(req.body);
-    res.status(200).json(atualizado);
+    const pedidoAtualizado = await PedidoUseCases.updatePedidoDB({
+      ...req.body,
+      pedido_id: req.params.id
+    });
+    res.status(200).json(pedidoAtualizado);
   } catch (error) {
     res.status(404).json({ erro: error.message });
   }

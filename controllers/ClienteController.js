@@ -29,7 +29,10 @@ async function addCliente(req, res) {
 
 async function updateCliente(req, res) {
   try {
-    const clienteAtualizado = await ClienteUseCases.updateClienteDB(req.body);
+    const clienteAtualizado = await ClienteUseCases.updateClienteDB({
+      ...req.body,
+      cliente_id: req.params.id
+    });
     res.status(200).json(clienteAtualizado);
   } catch (error) {
     res.status(404).json({ erro: error.message });

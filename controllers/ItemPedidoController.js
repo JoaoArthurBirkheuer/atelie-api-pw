@@ -29,8 +29,11 @@ async function addItemPedido(req, res) {
 
 async function updateItemPedido(req, res) {
   try {
-    const atualizado = await ItemPedidoUseCases.updateItemPedidoDB(req.body);
-    res.status(200).json(atualizado);
+    const itemAtualizado = await ItemPedidoUseCases.updateItemPedidoDB({
+      ...req.body,
+      item_id: req.params.id
+    });
+    res.status(200).json(itemAtualizado);
   } catch (error) {
     res.status(404).json({ erro: error.message });
   }

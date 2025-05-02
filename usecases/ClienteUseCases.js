@@ -27,7 +27,7 @@ async function addClienteDB({ nome, email, telefone, endereco }) {
 
 async function updateClienteDB({ cliente_id, nome, email, telefone, endereco }) {
   const { rows } = await pool.query(
-    'UPDATE tb_clientes SET nome = $1, email = $2, telefone = $3, endereco = $4 WHERE cliente_id = $5 RETURNING cliente_id, nome, email, telefone, endereco',
+    'UPDATE tb_clientes SET nome=$1, email=$2, telefone=$3, endereco=$4 WHERE cliente_id=$5 RETURNING *',
     [nome, email, telefone, endereco, cliente_id]
   );
   if (rows.length === 0) throw new Error('Cliente não encontrado');
