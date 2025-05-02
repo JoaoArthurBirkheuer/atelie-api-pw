@@ -12,3 +12,4 @@ app.use(rotas); // <- Aqui ele registra TODAS as rotas
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
+//
