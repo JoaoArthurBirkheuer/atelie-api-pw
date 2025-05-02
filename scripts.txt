@@ -1,0 +1,53 @@
+CREATE TABLE tb_item_pedido (
+  item_id       SERIAL PRIMARY KEY,
+  pedido_id     INT NOT NULL
+    REFERENCES tb_pedidos(pedido_id)
+    ON DELETE CASCADE,
+  peca_id       INT NOT NULL
+    REFERENCES tb_pecas(peca_id)
+    ON DELETE RESTRICT,
+  quantidade    INT  NOT NULL CHECK (quantidade > 0),
+  preco_venda   NUMERIC(10,2) NOT NULL,
+  desconto_pct  NUMERIC(5,2) DEFAULT 0 CHECK (desconto_pct >= 0)
+);
+
+CREATE TABLE tb_pedidos (
+  pedido_id     SERIAL PRIMARY KEY,
+  cliente_id    INT NOT NULL
+    REFERENCES tb_clientes(cliente_id)
+    ON DELETE RESTRICT,
+  vendedor_id   INT NOT NULL
+    REFERENCES tb_vendedores(vendedor_id)
+    ON DELETE RESTRICT,
+  data_pedido   TIMESTAMP  NOT NULL DEFAULT NOW(),
+  status        VARCHAR(20) NOT NULL DEFAULT 'EM_PROCESSO',
+  valor_total   NUMERIC(12,2) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE tb_pecas (
+  peca_id         SERIAL PRIMARY KEY,
+  nome            VARCHAR(100) NOT NULL,
+  descricao       TEXT,
+  tipo_madeira    VARCHAR(50),
+  largura_cm      DECIMAL(6,2),
+  altura_cm       DECIMAL(6,2),
+  profundidade_cm DECIMAL(6,2),
+  preco_unitario  NUMERIC(10,2) NOT NULL,
+  estoque         INT DEFAULT 0
+);
+
+CREATE TABLE tb_clientes (
+  cliente_id    SERIAL PRIMARY KEY,
+  nome          VARCHAR(100) NOT NULL,
+  email         VARCHAR(150) UNIQUE NOT NULL,
+  telefone      VARCHAR(20),
+  endereco      TEXT
+);
+
+CREATE TABLE tb_vendedores (
+  vendedor_id   SERIAL PRIMARY KEY,
+  nome          VARCHAR(100) NOT NULL,
+  email         VARCHAR(150) UNIQUE NOT NULL,
+  telefone      VARCHAR(20),
+  data_admissao DATE NOT NULL
+);
