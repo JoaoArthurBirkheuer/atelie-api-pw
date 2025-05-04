@@ -14,4 +14,22 @@ function verificarToken(req, res, next) {
   });
 }
 
-module.exports = { verificarToken };
+function verificarCliente(req, res, next) {
+  if (req.usuario?.tipo !== 'cliente') {
+    return res.status(403).json({ erro: 'Acesso permitido apenas para clientes' });
+  }
+  next();
+}
+
+function verificarVendedor(req, res, next) {
+  if (req.usuario?.tipo !== 'vendedor') {
+    return res.status(403).json({ erro: 'Acesso permitido apenas para vendedores' });
+  }
+  next();
+}
+
+module.exports = {
+  verificarToken,
+  verificarCliente,
+  verificarVendedor
+};
