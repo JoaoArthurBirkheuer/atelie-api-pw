@@ -18,9 +18,19 @@ async function getClientePorId(req, res) {
   }
 }
 
+async function getClientePorEmail(req, res) {
+  try {
+    const cliente = await ClienteUseCases.getClientePorEmailDB(req.params.email);
+    res.status(200).json(cliente);
+  } catch (error) {
+    res.status(404).json({ erro: error.message });
+  }
+}
+
 async function addCliente(req, res) {
   try {
-    const novoCliente = await ClienteUseCases.addClienteDB(req.body);
+    const { nome, email, telefone, endereco, senha } = req.body;
+    const novoCliente = await ClienteUseCases.addClienteDB({ nome, email, telefone, endereco, senha });
     res.status(201).json(novoCliente);
   } catch (error) {
     res.status(400).json({ erro: error.message });
@@ -51,6 +61,7 @@ async function deleteCliente(req, res) {
 module.exports = {
   getClientes,
   getClientePorId,
+  getClientePorEmail,
   addCliente,
   updateCliente,
   deleteCliente,

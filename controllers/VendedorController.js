@@ -18,9 +18,19 @@ async function getVendedorPorId(req, res) {
   }
 }
 
+async function getVendedorPorEmail(req, res) {
+  try {
+    const vendedor = await VendedorUseCases.getVendedorPorEmailDB(req.params.email);
+    res.status(200).json(vendedor);
+  } catch (error) {
+    res.status(404).json({ erro: error.message });
+  }
+}
+
 async function addVendedor(req, res) {
   try {
-    const novo = await VendedorUseCases.addVendedorDB(req.body);
+    const { nome, email, telefone, data_admissao, senha } = req.body;
+    const novo = await VendedorUseCases.addVendedorDB({ nome, email, telefone, data_admissao, senha });
     res.status(201).json(novo);
   } catch (error) {
     res.status(400).json({ erro: error.message });
@@ -51,6 +61,7 @@ async function deleteVendedor(req, res) {
 module.exports = {
   getVendedores,
   getVendedorPorId,
+  getVendedorPorEmail,
   addVendedor,
   updateVendedor,
   deleteVendedor,

@@ -6,6 +6,9 @@ const vendedorRoutes = require('./VendedorRoutes');
 const pecaRoutes = require('./PecaRoutes');
 const pedidoRoutes = require('./PedidoRoutes');
 const itemPedidoRoutes = require('./ItemPedidoRoutes');
+const authRoutes = require('../auth/AuthRoutes');
+
+router.use('/auth', authRoutes);
 
 router.use('/clientes', clienteRoutes);
 router.use('/vendedores', vendedorRoutes);
