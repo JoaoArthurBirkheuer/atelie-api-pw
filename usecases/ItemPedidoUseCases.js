@@ -45,10 +45,19 @@ async function deleteItemPedidoDB(id) {
   return 'Item de pedido excluído com sucesso';
 }
 
+async function getItensPorPedidoDB(pedido_id) {
+  const { rows } = await pool.query(
+    'SELECT * FROM tb_item_pedido WHERE pedido_id = $1',
+    [pedido_id]
+  );
+  return rows.map(row => new ItemPedido(row));
+}
+
 module.exports = {
   getItensPedidoDB,
   getItemPedidoPorIdDB,
   addItemPedidoDB,
   updateItemPedidoDB,
   deleteItemPedidoDB,
+  getItensPorPedidoDB
 };

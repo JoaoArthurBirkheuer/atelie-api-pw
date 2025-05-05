@@ -48,10 +48,20 @@ async function deleteItemPedido(req, res) {
   }
 }
 
+async function getItensPorPedido(req, res) {
+  try {
+    const itens = await ItemPedidoUseCases.getItensPorPedidoDB(req.params.pedido_id);
+    res.status(200).json(itens);
+  } catch (error) {
+    res.status(500).json({ erro: error.message });
+  }
+}
+
 module.exports = {
   getItensPedido,
   getItemPedidoPorId,
   addItemPedido,
   updateItemPedido,
   deleteItemPedido,
+  getItensPorPedido
 };
