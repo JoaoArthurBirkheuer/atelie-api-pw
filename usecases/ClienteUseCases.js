@@ -35,11 +35,29 @@ async function addClienteDB({ nome, email, telefone, endereco, senha }) {
 }
 
 async function updateClienteDB({ cliente_id, nome, email, telefone, endereco, senha }) {
-  const hashedPassword = await bcrypt.hash(senha, 10);
-  const { rows } = await pool.query(
-    'UPDATE tb_clientes SET nome=$1, email=$2, telefone=$3, endereco=$4, senha=$5 WHERE cliente_id=$6 RETURNING *',
-    [nome, email, telefone, endereco, hashedPassword, cliente_id]
-  );
+  let query;
+  let values;
+
+  if (senha) {
+    const hashedPassword = await bcrypt.hash(senha, 10);
+    query = `
+      UPDATE tb_clientes 
+      SET nome=$1, email=$2, telefone=$3, endereco=$4, senha=$5 
+      WHERE cliente_id=$6 
+      RETURNING *
+    `;
+    values = [nome, email, telefone, endereco, hashedPassword, cliente_id];
+  } else {
+    query = `
+      UPDATE tb_clientes 
+      SET nome=$1, email=$2, telefone=$3, endereco=$4 
+      WHERE cliente_id=$5 
+      RETURNING *
+    `;
+    values = [nome, email, telefone, endereco, cliente_id];
+  }
+
+  const { rows } = await pool.query(query, values);
   if (rows.length === 0) throw new Error('Cliente não encontrado');
   delete rows[0].senha;
   return new Cliente(rows[0]);

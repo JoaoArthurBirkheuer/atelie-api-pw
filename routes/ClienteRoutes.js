@@ -6,7 +6,7 @@ const { verificarToken, verificarCliente } = require('../auth/AuthMiddleware');
 router.get('/', clienteController.getClientes);
 router.get('/:id', clienteController.getClientePorId);
 router.post('/', clienteController.addCliente);
-router.put('/:id', verificarToken, verificarCliente, clienteController.updateCliente);
-router.delete('/:id', verificarToken, verificarCliente, clienteController.deleteCliente);
+router.put('/:id', verificarToken, clienteController.updateCliente);
+router.delete('/:id', verificarToken, clienteController.deleteCliente);
 
 module.exports = router;
