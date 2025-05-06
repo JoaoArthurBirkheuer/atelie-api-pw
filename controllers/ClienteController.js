@@ -68,10 +68,25 @@ async function deleteCliente(req, res) {
   }
 }
 
+async function getPedidosCliente(req, res) {
+  try {
+    // Verifica se o cliente está tentando acessar seus próprios pedidos
+    if (req.usuario.tipo === 'cliente' && req.usuario.id !== Number(req.params.id)) {
+      return res.status(403).json({ erro: 'Você só pode visualizar seus próprios pedidos' });
+    }
+
+    const pedidos = await ClienteUseCases.getPedidosPorClienteDB(req.params.id);
+    res.status(200).json(pedidos);
+  } catch (error) {
+    res.status(500).json({ erro: error.message });
+  }
+}
+
 module.exports = {
   getClientes,
   getClientePorId,
   addCliente,
   updateCliente,
-  deleteCliente
+  deleteCliente,
+  getPedidosCliente
 };

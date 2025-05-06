@@ -5,7 +5,7 @@ const AuthController = require('./AuthController');
 router.post('/login', AuthController.login);
 router.post('/register', AuthController.register);
 
-const { verificarToken } = require('./authMiddleware');
+const { verificarToken } = require('./AuthMiddleware');
 
 router.get('/protegido', verificarToken, (req, res) => {
   res.json({

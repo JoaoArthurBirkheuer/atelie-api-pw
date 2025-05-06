@@ -24,6 +24,17 @@ async function getClientePorEmailDB(email) {
   return new Cliente(rows[0]);
 }
 
+async function getPedidosPorClienteDB(clienteId) {
+  const { rows } = await pool.query(`
+    SELECT p.* 
+    FROM tb_pedidos p
+    WHERE p.cliente_id = $1
+    ORDER BY p.data_pedido DESC
+  `, [clienteId]);
+  
+  return rows.map(row => new Pedido(row));
+}
+
 async function addClienteDB({ nome, email, telefone, endereco, senha }) {
   const hashedPassword = await bcrypt.hash(senha, 10);
   const { rows } = await pool.query(
@@ -76,5 +87,6 @@ module.exports = {
   getClientePorEmailDB,
   addClienteDB,
   updateClienteDB,
-  deleteClienteDB
+  deleteClienteDB,
+  getPedidosPorClienteDB
 };
