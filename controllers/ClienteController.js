@@ -31,7 +31,7 @@ async function addCliente(req, res) {
 async function updateCliente(req, res) {
   try {
     // Verifica se é cliente tentando editar outra conta
-    if (req.usuario.tipo === 'cliente' && req.usuario.id !== req.params.id) {
+    if (req.usuario.tipo === 'cliente' && req.usuario.id !== Number(req.params.id)) {
       return res.status(403).json({ erro: 'Você só pode editar sua própria conta' });
     }
 
