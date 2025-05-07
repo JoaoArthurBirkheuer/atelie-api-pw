@@ -10,6 +10,7 @@ function verificarToken(req, res, next) {
     if (err) return res.status(403).json({ erro: 'Token inválido' });
 
     req.usuario = user;
+    console.log('Usuário autenticado:', req.usuario);
     next();
   });
 }

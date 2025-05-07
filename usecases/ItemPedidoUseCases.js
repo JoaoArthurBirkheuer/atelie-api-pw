@@ -1,63 +1,75 @@
 const { pool } = require('../config');
 const ItemPedido = require('../entities/ItemPedido');
 
-async function getItensPedidoDB() {
-  const { rows } = await pool.query('SELECT * FROM tb_item_pedido');
-  return rows.map(row => new ItemPedido(row));
+class ItemPedidoUseCases {
+  static async getItensPedido() {
+    const { rows } = await pool.query('SELECT * FROM tb_item_pedido');
+    return rows.map(row => new ItemPedido(row));
+  }
+
+  static async getItemPedidoPorId(id) {
+    const { rows } = await pool.query(
+      'SELECT * FROM tb_item_pedido WHERE item_id = $1',
+      [id]
+    );
+    if (rows.length === 0) throw new Error('Item de pedido não encontrado');
+    return new ItemPedido(rows[0]);
+  }
+
+  static async addItemPedido({ pedido_id, peca_id, quantidade, preco_venda, desconto_pct = 0 }) {
+    if (!pedido_id || !peca_id || !quantidade || !preco_venda) {
+      throw new Error('Dados incompletos para adicionar item');
+    }
+
+    const { rows } = await pool.query(
+      `INSERT INTO tb_item_pedido 
+      (pedido_id, peca_id, quantidade, preco_venda, desconto_pct)
+      VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [pedido_id, peca_id, quantidade, preco_venda, desconto_pct]
+    );
+    return new ItemPedido(rows[0]);
+  }
+
+  static async updateItemPedido({ item_id, ...dados }) {
+    const campos = Object.keys(dados).filter(key => dados[key] !== undefined);
+    if (campos.length === 0) throw new Error('Nenhum dado válido para atualização');
+
+    const valores = campos.map(key => dados[key]);
+    const setClause = campos.map((key, i) => `${key} = $${i + 1}`).join(', ');
+
+    const { rows } = await pool.query(
+      `UPDATE tb_item_pedido SET ${setClause} 
+       WHERE item_id = $${campos.length + 1} RETURNING *`,
+      [...valores, item_id]
+    );
+
+    if (rows.length === 0) throw new Error('Item de pedido não encontrado');
+    return new ItemPedido(rows[0]);
+  }
+
+  static async deleteItemPedido(id) {
+    const { rowCount } = await pool.query(
+      'DELETE FROM tb_item_pedido WHERE item_id = $1',
+      [id]
+    );
+    if (rowCount === 0) throw new Error('Item de pedido não encontrado');
+    return { success: true, message: 'Item removido com sucesso' };
+  }
+
+  static async getItensPorPedido(pedidoId) {
+    if (!pedidoId || isNaN(pedidoId)) {
+      throw new Error('ID do pedido inválido');
+    }
+  
+    const { rows } = await pool.query(
+      `SELECT ip.*, p.nome AS peca_nome
+       FROM tb_item_pedido ip
+       JOIN tb_pecas p ON ip.peca_id = p.peca_id
+       WHERE ip.pedido_id = $1`,
+      [Number(pedidoId)]
+    );
+    return rows.map(row => new ItemPedido(row));
+  }
 }
 
-async function getItemPedidoPorIdDB(id) {
-  const { rows } = await pool.query(
-    'SELECT * FROM tb_item_pedido WHERE item_id = $1',
-    [id]
-  );
-  if (rows.length === 0) throw new Error('Item de pedido não encontrado');
-  return new ItemPedido(rows[0]);
-}
-
-async function addItemPedidoDB({ pedido_id, peca_id, quantidade, preco_venda, desconto_pct }) {
-  const { rows } = await pool.query(
-    `INSERT INTO tb_item_pedido 
-    (pedido_id, peca_id, quantidade, preco_venda, desconto_pct)
-    VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [pedido_id, peca_id, quantidade, preco_venda, desconto_pct]
-  );
-  return new ItemPedido(rows[0]);
-}
-
-async function updateItemPedidoDB({ item_id, pedido_id, peca_id, quantidade, preco_venda, desconto_pct }) {
-  const { rows } = await pool.query(
-    `UPDATE tb_item_pedido SET 
-     pedido_id = $1, peca_id = $2, quantidade = $3, preco_venda = $4, desconto_pct = $5
-     WHERE item_id = $6 RETURNING *`,
-    [pedido_id, peca_id, quantidade, preco_venda, desconto_pct, item_id]
-  );
-  if (rows.length === 0) throw new Error('Item de pedido não encontrado');
-  return new ItemPedido(rows[0]);
-}
-
-async function deleteItemPedidoDB(id) {
-  const { rowCount } = await pool.query(
-    'DELETE FROM tb_item_pedido WHERE item_id = $1',
-    [id]
-  );
-  if (rowCount === 0) throw new Error('Item de pedido não encontrado');
-  return 'Item de pedido excluído com sucesso';
-}
-
-async function getItensPorPedidoDB(pedido_id) {
-  const { rows } = await pool.query(
-    'SELECT * FROM tb_item_pedido WHERE pedido_id = $1',
-    [pedido_id]
-  );
-  return rows.map(row => new ItemPedido(row));
-}
-
-module.exports = {
-  getItensPedidoDB,
-  getItemPedidoPorIdDB,
-  addItemPedidoDB,
-  updateItemPedidoDB,
-  deleteItemPedidoDB,
-  getItensPorPedidoDB
-};
+module.exports = ItemPedidoUseCases;

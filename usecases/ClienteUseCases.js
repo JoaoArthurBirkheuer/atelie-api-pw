@@ -1,6 +1,7 @@
 const { pool } = require('../config');
 const Cliente = require('../entities/Cliente');
 const bcrypt = require('bcrypt');
+const Pedido = require('../entities/Pedido');
 
 async function getClientesDB() {
   const { rows } = await pool.query('SELECT * FROM tb_clientes');
@@ -31,7 +32,7 @@ async function getPedidosPorClienteDB(clienteId) {
     WHERE p.cliente_id = $1
     ORDER BY p.data_pedido DESC
   `, [clienteId]);
-  
+
   return rows.map(row => new Pedido(row));
 }
 

@@ -5,43 +5,87 @@ const { pool } = require('../config');
 async function login(req, res) {
   const { email, senha, tipo } = req.body;
 
+  // Validação básica dos campos
+  if (!email || !senha || !tipo) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Email, senha e tipo são obrigatórios' 
+    });
+  }
+
   try {
+    let table, idField, redirectRoute;
+    
     if (tipo === 'cliente') {
-      const clienteResult = await pool.query('SELECT * FROM tb_clientes WHERE email = $1', [email]);
-      if (clienteResult.rows.length === 0) {
-        return res.status(404).json({ erro: 'Cliente não encontrado' });
-      }
-
-      const cliente = clienteResult.rows[0];
-      const match = await bcrypt.compare(senha, cliente.senha);
-      if (!match) return res.status(401).json({ erro: 'Senha inválida' });
-
-      const token = jwt.sign({ id: cliente.cliente_id, tipo }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-      return res.json({ token, tipo, id: cliente.cliente_id });
+      table = 'tb_clientes';
+      idField = 'cliente_id';
+      redirectRoute = '/clientes';
+    } else if (tipo === 'vendedor') {
+      table = 'tb_vendedores';
+      idField = 'vendedor_id';
+      redirectRoute = '/vendedores';
+    } else {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Tipo de usuário inválido' 
+      });
     }
 
-    if (tipo === 'vendedor') {
-      const vendedorResult = await pool.query('SELECT * FROM tb_vendedores WHERE email = $1', [email]);
-      if (vendedorResult.rows.length === 0) {
-        return res.status(404).json({ erro: 'Vendedor não encontrado' });
-      }
+    // Consulta no banco de dados
+    const result = await pool.query(
+      `SELECT * FROM ${table} WHERE email = $1`, 
+      [email]
+    );
 
-      const vendedor = vendedorResult.rows[0];
-      const match = await bcrypt.compare(senha, vendedor.senha);
-      if (!match) return res.status(401).json({ erro: 'Senha inválida' });
-
-      const token = jwt.sign({ id: vendedor.vendedor_id, tipo }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-      return res.json({ token, tipo, id: vendedor.vendedor_id });
+    if (result.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false,
+        error: `${tipo} não encontrado` 
+      });
     }
 
-    return res.status(400).json({ erro: 'Tipo de usuário inválido' });
+    const usuario = result.rows[0];
+    const match = await bcrypt.compare(senha, usuario.senha);
+
+    if (!match) {
+      return res.status(401).json({ 
+        success: false,
+        error: 'Credenciais inválidas' 
+      });
+    }
+
+    // Geração do token
+    const token = jwt.sign(
+      { 
+        id: usuario[idField], 
+        tipo,
+        email: usuario.email 
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // Resposta padronizada
+    return res.json({
+      success: true,
+      token,
+      user: {
+        id: usuario[idField],
+        tipo,
+        nome: usuario.nome,
+        email: usuario.email
+      },
+      redirect: redirectRoute
+    });
+
   } catch (error) {
-    res.status(500).json({ erro: error.message });
+    console.error('Erro no login:', error);
+    return res.status(500).json({ 
+      success: false,
+      error: 'Erro interno no servidor' 
+    });
   }
 }
-
 
 async function register(req, res) {
   const { tipo, nome, email, telefone, endereco, data_admissao, senha } = req.body;
