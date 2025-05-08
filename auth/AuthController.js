@@ -69,12 +69,10 @@ async function login(req, res) {
     return res.json({
       success: true,
       token,
-      user: {
-        id: usuario[idField],
-        tipo,
-        nome: usuario.nome,
-        email: usuario.email
-      },
+      tipo,      
+      id: usuario[idField], 
+      nome: usuario.nome,
+      email: usuario.email,
       redirect: redirectRoute
     });
 
