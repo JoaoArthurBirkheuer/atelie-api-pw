@@ -112,15 +112,79 @@ class PedidoUseCases {
     if (!STATUS_PERMITIDOS.includes(novoStatus)) {
       throw new Error(`Status inválido. Valores permitidos: ${STATUS_PERMITIDOS.join(', ')}`);
     }
-
-    const { rows } = await pool.query(
-      `UPDATE tb_pedidos SET status = $1 
-       WHERE pedido_id = $2 RETURNING *`,
-      [novoStatus, pedidoId]
-    );
-
-    if (rows.length === 0) throw new Error('Pedido não encontrado');
-    return new Pedido(rows[0]);
+  
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+  
+      // Obtém o status atual
+      const { rows: pedidoAtualRows } = await client.query(
+        'SELECT status FROM tb_pedidos WHERE pedido_id = $1',
+        [pedidoId]
+      );
+  
+      if (pedidoAtualRows.length === 0) throw new Error('Pedido não encontrado');
+  
+      const statusAtual = pedidoAtualRows[0].status;
+  
+      // Se for de PENDENTE para ENTREGUE → desconta estoque
+      if (novoStatus === 'ENTREGUE' && statusAtual !== 'ENTREGUE') {
+        const { rows: itens } = await client.query(
+          `SELECT ip.peca_id, ip.quantidade, p.estoque
+           FROM tb_item_pedido ip
+           JOIN tb_pecas p ON ip.peca_id = p.peca_id
+           WHERE ip.pedido_id = $1`,
+          [pedidoId]
+        );
+  
+        if (itens.length === 0) throw new Error('Pedido sem itens');
+  
+        for (const item of itens) {
+          if (item.quantidade > item.estoque) {
+            throw new Error(`Estoque insuficiente para a peça ID ${item.peca_id}`);
+          }
+        }
+  
+        for (const item of itens) {
+          await client.query(
+            `UPDATE tb_pecas SET estoque = estoque - $1 WHERE peca_id = $2`,
+            [item.quantidade, item.peca_id]
+          );
+        }
+      }
+  
+      // Se for de ENTREGUE para CANCELADO ou PENDENTE → repõe estoque
+      if (statusAtual === 'ENTREGUE' && (novoStatus === 'CANCELADO' || novoStatus === 'PENDENTE')) {
+        const { rows: itens } = await client.query(
+          `SELECT peca_id, quantidade FROM tb_item_pedido WHERE pedido_id = $1`,
+          [pedidoId]
+        );
+  
+        for (const item of itens) {
+          await client.query(
+            `UPDATE tb_pecas SET estoque = estoque + $1 WHERE peca_id = $2`,
+            [item.quantidade, item.peca_id]
+          );
+        }
+      }
+  
+      // Atualiza o status do pedido
+      const { rows } = await client.query(
+        `UPDATE tb_pedidos SET status = $1 WHERE pedido_id = $2 RETURNING *`,
+        [novoStatus, pedidoId]
+      );
+  
+      if (rows.length === 0) throw new Error('Pedido não encontrado');
+  
+      await client.query('COMMIT');
+      return new Pedido(rows[0]);
+  
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
   static async deletePedido(pedidoId) {
