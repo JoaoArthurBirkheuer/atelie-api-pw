@@ -5,7 +5,6 @@ const { pool } = require('../config');
 async function login(req, res) {
   const { email, senha, tipo } = req.body;
 
-  // Validação básica dos campos
   if (!email || !senha || !tipo) {
     return res.status(400).json({ 
       success: false,
@@ -31,7 +30,6 @@ async function login(req, res) {
       });
     }
 
-    // Consulta no banco de dados
     const result = await pool.query(
       `SELECT * FROM ${table} WHERE email = $1`, 
       [email]
@@ -54,18 +52,17 @@ async function login(req, res) {
       });
     }
 
-    // Geração do token
     const token = jwt.sign(
       { 
         id: usuario[idField], 
         tipo,
-        email: usuario.email 
+        email: usuario.email,
+        is_admin: usuario.is_admin 
       },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    // Resposta padronizada
     return res.json({
       success: true,
       token,
@@ -73,6 +70,7 @@ async function login(req, res) {
       id: usuario[idField], 
       nome: usuario.nome,
       email: usuario.email,
+      is_admin: usuario.is_admin,
       redirect: redirectRoute
     });
 
@@ -96,17 +94,17 @@ async function register(req, res) {
         'INSERT INTO tb_clientes (nome, email, telefone, endereco, senha) VALUES ($1, $2, $3, $4, $5) RETURNING cliente_id',
         [nome, email, telefone, endereco, senhaHash]
       );
-      const token = jwt.sign({ id: result.rows[0].cliente_id, tipo }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      return res.status(201).json({ token, tipo, id: result.rows[0].cliente_id });
+      const token = jwt.sign({ id: result.rows[0].cliente_id, tipo, is_admin: false }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      return res.status(201).json({ token, tipo, id: result.rows[0].cliente_id, is_admin: false });
     }
 
     if (tipo === 'vendedor') {
       const result = await pool.query(
-        'INSERT INTO tb_vendedores (nome, email, telefone, data_admissao, senha) VALUES ($1, $2, $3, $4, $5) RETURNING vendedor_id',
+        'INSERT INTO tb_vendedores (nome, email, telefone, data_admissao, senha, is_admin) VALUES ($1, $2, $3, $4, $5, FALSE) RETURNING vendedor_id, is_admin',
         [nome, email, telefone, data_admissao, senhaHash]
       );
-      const token = jwt.sign({ id: result.rows[0].vendedor_id, tipo }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      return res.status(201).json({ token, tipo, id: result.rows[0].vendedor_id });
+      const token = jwt.sign({ id: result.rows[0].vendedor_id, tipo, is_admin: result.rows[0].is_admin }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      return res.status(201).json({ token, tipo, id: result.rows[0].vendedor_id, is_admin: result.rows[0].is_admin });
     }
 
     return res.status(400).json({ erro: 'Tipo de usuário inválido' });

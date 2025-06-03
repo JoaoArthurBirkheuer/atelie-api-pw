@@ -11,6 +11,9 @@ async function getVendedores(req, res) {
 
 async function getVendedorPorId(req, res) {
   try {
+    if (req.usuario && req.usuario.tipo === 'vendedor' && req.usuario.id !== Number(req.params.id)) {
+      return res.status(403).json({ erro: 'Você só pode visualizar seus próprios dados de vendedor.' });
+    }
     const vendedor = await VendedorUseCases.getVendedorPorIdDB(req.params.id);
     res.status(200).json(vendedor);
   } catch (error) {
@@ -39,6 +42,9 @@ async function addVendedor(req, res) {
 
 async function updateVendedor(req, res) {
   try {
+    if (req.usuario.tipo === 'vendedor' && req.usuario.id !== Number(req.params.id)) {
+      return res.status(403).json({ erro: 'Você só pode editar sua própria conta de vendedor' }); //
+    }
     const vendedorAtualizado = await VendedorUseCases.updateVendedorDB({
       ...req.body,
       vendedor_id: req.params.id

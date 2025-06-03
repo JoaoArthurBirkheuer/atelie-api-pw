@@ -11,6 +11,9 @@ async function getClientes(req, res) {
 
 async function getClientePorId(req, res) {
   try {
+    if (req.usuario && req.usuario.tipo === 'cliente' && req.usuario.id !== Number(req.params.id)) {
+      return res.status(403).json({ erro: 'Você só pode visualizar seus próprios dados de cliente.' });
+    }
     const cliente = await ClienteUseCases.getClientePorIdDB(req.params.id);
     res.status(200).json(cliente);
   } catch (error) {
@@ -30,7 +33,6 @@ async function addCliente(req, res) {
 
 async function updateCliente(req, res) {
   try {
-    // Verifica se é cliente tentando editar outra conta
     if (req.usuario.tipo === 'cliente' && req.usuario.id !== Number(req.params.id)) {
       return res.status(403).json({ erro: 'Você só pode editar sua própria conta' });
     }
@@ -47,21 +49,7 @@ async function updateCliente(req, res) {
 
 async function deleteCliente(req, res) {
   try {
-    // Verifica se é cliente tentando excluir outra conta
-    if (req.usuario.tipo === 'cliente' && req.usuario.id !== req.params.id) {
-      return res.status(403).json({ erro: 'Você só pode excluir sua própria conta' });
-    }
-
     const msg = await ClienteUseCases.deleteClienteDB(req.params.id);
-    
-    // Se o cliente excluiu a própria conta
-    if (req.usuario.tipo === 'cliente' && req.usuario.id === req.params.id) {
-      return res.status(200).json({ 
-        mensagem: msg,
-        logout: true 
-      });
-    }
-    
     res.status(200).json({ mensagem: msg });
   } catch (error) {
     res.status(400).json({ erro: error.message });
@@ -70,7 +58,6 @@ async function deleteCliente(req, res) {
 
 async function getPedidosCliente(req, res) {
   try {
-    // Verifica se o cliente está tentando acessar seus próprios pedidos
     if (req.usuario.tipo === 'cliente' && req.usuario.id !== Number(req.params.id)) {
       return res.status(403).json({ erro: 'Você só pode visualizar seus próprios pedidos' });
     }

@@ -29,8 +29,19 @@ function verificarVendedor(req, res, next) {
   next();
 }
 
+function verificarAdmin(req, res, next) {
+  if (!req.usuario) {
+    return res.status(401).json({ erro: 'Autenticação necessária para esta operação.' });
+  }
+  if (!req.usuario.is_admin) {
+    return res.status(403).json({ erro: 'Acesso permitido apenas para administradores.' });
+  }
+  next();
+}
+
 module.exports = {
   verificarToken,
   verificarCliente,
-  verificarVendedor
+  verificarVendedor,
+  verificarAdmin
 };

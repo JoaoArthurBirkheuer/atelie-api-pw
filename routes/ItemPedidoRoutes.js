@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ItemPedidoController = require('../controllers/ItemPedidoController');
-const { verificarToken, verificarVendedor } = require('../auth/AuthMiddleware');
+const { verificarToken, verificarVendedor, verificarAdmin } = require('../auth/AuthMiddleware');
 
 const logRequests = (req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
@@ -36,7 +36,7 @@ router.put('/:id',
 
 router.delete('/:id', 
   verificarToken,
-  verificarVendedor,
+  verificarAdmin,
   ItemPedidoController.deleteItemPedido
 );
 
