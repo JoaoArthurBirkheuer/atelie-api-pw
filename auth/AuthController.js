@@ -57,7 +57,7 @@ async function login(req, res) {
         id: usuario[idField], 
         tipo,
         email: usuario.email,
-        is_admin: usuario.is_admin 
+        is_admin: usuario.is_admin
       },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
@@ -84,7 +84,7 @@ async function login(req, res) {
 }
 
 async function register(req, res) {
-  const { tipo, nome, email, telefone, endereco, data_admissao, senha } = req.body;
+  const { tipo, nome, email, telefone, endereco, data_admissao, senha, is_admin, jwt_secret } = req.body;
 
   try {
     const senhaHash = await bcrypt.hash(senha, 10);
@@ -99,9 +99,18 @@ async function register(req, res) {
     }
 
     if (tipo === 'vendedor') {
+      let isAdminVendedor = false;
+
+      if (is_admin === true) {
+        if (!jwt_secret || jwt_secret !== process.env.JWT_SECRET) {
+          return res.status(403).json({ erro: 'Secret JWT inválido para registrar como administrador.' });
+        }
+        isAdminVendedor = true; 
+      }
+
       const result = await pool.query(
-        'INSERT INTO tb_vendedores (nome, email, telefone, data_admissao, senha, is_admin) VALUES ($1, $2, $3, $4, $5, FALSE) RETURNING vendedor_id, is_admin',
-        [nome, email, telefone, data_admissao, senhaHash]
+        'INSERT INTO tb_vendedores (nome, email, telefone, data_admissao, senha, is_admin) VALUES ($1, $2, $3, $4, $5, $6) RETURNING vendedor_id, is_admin',
+        [nome, email, telefone, data_admissao, senhaHash, isAdminVendedor]
       );
       const token = jwt.sign({ id: result.rows[0].vendedor_id, tipo, is_admin: result.rows[0].is_admin }, process.env.JWT_SECRET, { expiresIn: '1h' });
       return res.status(201).json({ token, tipo, id: result.rows[0].vendedor_id, is_admin: result.rows[0].is_admin });
@@ -109,7 +118,11 @@ async function register(req, res) {
 
     return res.status(400).json({ erro: 'Tipo de usuário inválido' });
   } catch (error) {
-    res.status(500).json({ erro: error.message });
+    console.error('Erro no registro:', error);
+    if (error.code === '23505') {
+      return res.status(409).json({ erro: 'Email já cadastrado. Por favor, use outro email.' });
+    }
+    res.status(500).json({ erro: error.message || 'Erro interno no servidor' });
   }
 }
 
